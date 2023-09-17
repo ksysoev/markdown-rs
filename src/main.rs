@@ -51,18 +51,62 @@ mod markdown {
             self.next()
         }
     }
+
+    #[derive(Debug)]
+    pub enum Token {
+        Heading(u8),
+        Text(String),
+        Newline,
+    }
+
+    pub fn tokenize(input: std::str::Chars) -> Vec<Token> {
+        let mut scanner = Scanner::new(input);
+
+        let mut tokens = Vec::new();
+
+        while let Some(c) = scanner.next() {
+            match c {
+                '#' => {
+                    let mut level = 1;
+                    while scanner.peek() == Some('#') {
+                        scanner.next();
+                        level += 1;
+                    }
+
+                    tokens.push(Token::Heading(level));
+                }
+                '\n' => {
+                    tokens.push(Token::Newline);
+                }
+                _ => {
+                    let mut text = String::new();
+                    text.push(c);
+
+                    while let Some(c) = scanner.peek() {
+                        match c {
+                            '\n' => break,
+                            _ => {
+                                text.push(c);
+                                scanner.next();
+                            }
+                        }
+                    }
+
+                    tokens.push(Token::Text(text));
+                }
+            }
+        }
+
+        tokens
+    }
 }
 
 fn main() {
     let input = "# T1\n## T2\n### T3\n";
 
-    let iter = input.chars();
+    let tokens = markdown::tokenize(input.chars());
 
-    let mut scanner = markdown::Scanner::new(iter);
-    // let mut tokenizer = markdown::Tokenizer::new(scanner);
-
-    while let Some(c) = scanner.next() {
-        print!("{}", c);
-        print!("{}", scanner.peek().unwrap_or(' '));
+    for token in tokens {
+        println!("{:?}", token);
     }
 }
